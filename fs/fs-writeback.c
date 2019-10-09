@@ -109,10 +109,10 @@ static void wb_io_lists_depopulated(struct bdi_writeback *wb)
  * inode_io_list_move_locked - move an inode onto a bdi_writeback IO list
  * @inode: inode to be moved
  * @wb: target bdi_writeback
- * @head: one of @wb->b_{dirty|io|more_io|dirty_time}
+ * @head: one of @wb->b_{dirty|io|more_io|dirty_time|attached}
  *
  * Move @inode->i_io_list to @list of @wb and set %WB_has_dirty_io.
- * Returns %true if @inode is the first occupant of the !dirty_time IO
+ * Returns %true if @inode is the first occupant of the dirty, io or more_io
  * lists; otherwise, %false.
  */
 static bool inode_io_list_move_locked(struct inode *inode,
@@ -123,12 +123,17 @@ static bool inode_io_list_move_locked(struct inode *inode,
 
 	list_move(&inode->i_io_list, head);
 
-	/* dirty_time doesn't count as dirty_io until expiration */
-	if (head != &wb->b_dirty_time)
-		return wb_io_lists_populated(wb);
+	if (head == &wb->b_dirty_time || head == &wb->b_attached) {
+		/*
+		 * dirty_time doesn't count as dirty_io until expiration,
+		 * attached list keeps a list of clean inodes, which are
+		 * attached to wb.
+		 */
+		wb_io_lists_depopulated(wb);
+		return false;
+	}
 
-	wb_io_lists_depopulated(wb);
-	return false;
+	return wb_io_lists_populated(wb);
 }
 
 /**
@@ -546,6 +551,37 @@ out_free:
 }
 
 /**
+ * cleanup_offline_wb - detach attached clean inodes
+ * @wb: target wb
+ *
+ * Clear the ->i_wb pointer of the attached inodes and drop
+ * the corresponding wb reference. Skip inodes which are dirty,
+ * freeing, switching or in the active writeback process.
+ *
+ */
+void cleanup_offline_wb(struct bdi_writeback *wb)
+{
+	struct inode *inode, *tmp;
+
+	spin_lock(&wb->list_lock);
+	list_for_each_entry_safe(inode, tmp, &wb->b_attached, i_io_list) {
+		if (!spin_trylock(&inode->i_lock))
+			continue;
+		xa_lock_irq(&inode->i_mapping->i_pages);
+		if (!(inode->i_state &
+		      (I_FREEING | I_CLEAR | I_SYNC | I_DIRTY | I_WB_SWITCH))) {
+			WARN_ON_ONCE(inode->i_wb != wb);
+			inode->i_wb = NULL;
+			wb_put(wb);
+			list_del_init(&inode->i_io_list);
+		}
+		xa_unlock_irq(&inode->i_mapping->i_pages);
+		spin_unlock(&inode->i_lock);
+	}
+	spin_unlock(&wb->list_lock);
+}
+
+/**
  * wbc_attach_and_unlock_inode - associate wbc with target inode and unlock it
  * @wbc: writeback_control of interest
  * @inode: target inode
@@ -779,19 +815,18 @@ EXPORT_SYMBOL_GPL(wbc_account_cgroup_owner);
  */
 int inode_congested(struct inode *inode, int cong_bits)
 {
-	/*
-	 * Once set, ->i_wb never becomes NULL while the inode is alive.
-	 * Start transaction iff ->i_wb is visible.
-	 */
-	if (inode && inode_to_wb_is_valid(inode)) {
+	if (inode) {
 		struct bdi_writeback *wb;
 		struct wb_lock_cookie lock_cookie = {};
 		bool congested;
 
 		wb = unlocked_inode_to_wb_begin(inode, &lock_cookie);
-		congested = wb_congested(wb, cong_bits);
+		if (wb) {
+			congested = wb_congested(wb, cong_bits);
+			unlocked_inode_to_wb_end(inode, &lock_cookie);
+			return congested;
+		}
 		unlocked_inode_to_wb_end(inode, &lock_cookie);
-		return congested;
 	}
 
 	return wb_congested(&inode_to_bdi(inode)->wb, cong_bits);
@@ -1436,8 +1471,13 @@ static void requeue_inode(struct inode *inode, struct bdi_writeback *wb,
 		inode_io_list_move_locked(inode, wb, &wb->b_dirty_time);
 		inode->i_state &= ~I_SYNC_QUEUED;
 	} else {
-		/* The inode is clean. Remove from writeback lists. */
-		inode_io_list_del_locked(inode, wb);
+		/*
+		 * The inode is clean. Remove from writeback lists and
+		 * move it to the attached list, because the inode is
+		 * still attached to wb.
+		 */
+		inode_io_list_move_locked(inode, wb, &wb->b_attached);
+		inode->i_state &= ~I_SYNC_QUEUED;
 	}
 }
 
@@ -1584,12 +1624,14 @@ static int writeback_single_inode(struct inode *inode,
 	wb = inode_to_wb_and_lock_list(inode);
 	spin_lock(&inode->i_lock);
 	/*
-	 * If the inode is now fully clean, then it can be safely removed from
-	 * its writeback list (if any).  Otherwise the flusher threads are
-	 * responsible for the writeback lists.
+	 * If inode is clean, remove it from writeback lists and put into
+	 * the attached list. Otherwise don't touch it. See comment above
+	 * for explanation.
 	 */
-	if (!(inode->i_state & I_DIRTY_ALL))
-		inode_io_list_del_locked(inode, wb);
+	if (!(inode->i_state & I_DIRTY_ALL)) {
+		inode_io_list_move_locked(inode, wb, &wb->b_attached);
+		inode->i_state &= ~I_SYNC_QUEUED;
+	}
 	spin_unlock(&wb->list_lock);
 	inode_sync_complete(inode);
 out:

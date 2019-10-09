@@ -114,6 +114,9 @@ struct bdi_writeback {
 	struct list_head b_io;		/* parked for writeback */
 	struct list_head b_more_io;	/* parked for more writeback */
 	struct list_head b_dirty_time;	/* time stamps are dirty */
+	struct list_head b_attached;	/* clean inodes pinning this wb
+					 * though inode->i_wb
+					 */
 	spinlock_t list_lock;		/* protects the b_* lists */
 
 	struct percpu_counter stat[NR_WB_STAT_ITEMS];
@@ -154,6 +157,7 @@ struct bdi_writeback {
 	struct cgroup_subsys_state *blkcg_css; /* and blkcg */
 	struct list_head memcg_node;	/* anchored at memcg->cgwb_list */
 	struct list_head blkcg_node;	/* anchored at blkcg->cgwb_list */
+	struct list_head offline_node;
 
 	union {
 		struct work_struct release_work;
