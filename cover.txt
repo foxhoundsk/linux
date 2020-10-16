@@ -1,0 +1,19 @@
+mm: cma: introduce a non-blocking version of cma_release()
+
+This small patchset introduces a non-blocking version of cma_release()
+and simplifies the code in hugetlbfs, where previously we had to
+temporarily drop hugetlb_lock around the cma_release() call.
+
+It should help Zi Yan on his work on 1 GB THPs: splitting a gigantic
+THP under a memory pressure requires a cma_release() call. If it's
+a blocking function, it complicates the already complicated code.
+Because there are at least two use cases like this (hugetlbfs is
+another example), I believe it's just better to make cma_release()
+non-blocking.
+
+v1:
+  - introduce cma_release_nowait() instead of making cma_release()
+    non-blocking, for performance reasons
+
+rfc:
+  https://lkml.org/lkml/2020/10/16/1050
