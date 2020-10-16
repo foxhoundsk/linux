@@ -1,0 +1,15 @@
+mm: cma: make cma_release() non-blocking
+
+This small patchset makes cma_release() non-blocking and simplifies
+the code in hugetlbfs, where previously we had to temporarily drop
+hugetlb_lock around the cma_release() call.
+
+It should help Zi Yan on his work on 1 GB THPs: splitting a gigantic
+THP under a memory pressure requires a cma_release() call. If it's
+a blocking function, it complicates the already complicated code.
+Because there are at least two use cases like this (hugetlbfs is
+another example), I believe it's just better to make cma_release()
+non-blocking.
+
+It also makes it more consistent with other memory releasing functions
+in the kernel: most of them are non-blocking.
