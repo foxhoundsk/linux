@@ -36,9 +36,18 @@
 
 #include "cma.h"
 
+struct cma_clear_bitmap_work {
+	struct work_struct work;
+	struct cma *cma;
+	unsigned long pfn;
+	unsigned int count;
+};
+
 struct cma cma_areas[MAX_CMA_AREAS];
 unsigned cma_area_count;
 static DEFINE_MUTEX(cma_mutex);
+
+struct workqueue_struct *cma_release_wq;
 
 phys_addr_t cma_get_base(const struct cma *cma)
 {
@@ -147,6 +156,10 @@ static int __init cma_init_reserved_areas(void)
 
 	for (i = 0; i < cma_area_count; i++)
 		cma_activate_area(&cma_areas[i]);
+
+	cma_release_wq = create_workqueue("cma_release");
+	if (!cma_release_wq)
+		return -ENOMEM;
 
 	return 0;
 }
@@ -437,6 +450,13 @@ struct page *cma_alloc(struct cma *cma, size_t count, unsigned int align,
 		return NULL;
 
 	for (;;) {
+		/*
+		 * CMA bitmaps are cleared asynchronously from works,
+		 * scheduled by cma_release(). To make sure the allocation
+		 * will success, cma release workqueue is flushed here.
+		 */
+		flush_workqueue(cma_release_wq);
+
 		mutex_lock(&cma->lock);
 		bitmap_no = bitmap_find_next_zero_area_off(cma->bitmap,
 				bitmap_maxno, start, bitmap_count, mask,
@@ -495,6 +515,17 @@ struct page *cma_alloc(struct cma *cma, size_t count, unsigned int align,
 	return page;
 }
 
+static void cma_clear_bitmap_fn(struct work_struct *work)
+{
+	struct cma_clear_bitmap_work *w;
+
+	w = container_of(work, struct cma_clear_bitmap_work, work);
+
+	cma_clear_bitmap(w->cma, w->pfn, w->count);
+
+	__free_page(pfn_to_page(w->pfn));
+}
+
 /**
  * cma_release() - release allocated pages
  * @cma:   Contiguous memory region for which the allocation is performed.
@@ -507,6 +538,7 @@ struct page *cma_alloc(struct cma *cma, size_t count, unsigned int align,
  */
 bool cma_release(struct cma *cma, const struct page *pages, unsigned int count)
 {
+	struct cma_clear_bitmap_work *work;
 	unsigned long pfn;
 
 	if (!cma || !pages)
@@ -521,8 +553,23 @@ bool cma_release(struct cma *cma, const struct page *pages, unsigned int count)
 
 	VM_BUG_ON(pfn + count > cma->base_pfn + cma->count);
 
-	free_contig_range(pfn, count);
-	cma_clear_bitmap(cma, pfn, count);
+	/*
+	 * To make cma_release() non-blocking, cma bitmap is cleared from
+	 * a work context (see cma_clear_bitmap_fn()). The first page
+	 * in the cma allocation is used to store the work structure,
+	 * so it's released after the cma bitmap clearance. Other pages
+	 * are released immediately as previously.
+	 */
+	if (count > 1)
+		free_contig_range(pfn + 1, count - 1);
+
+	work = (struct cma_clear_bitmap_work *)page_to_virt(pages);
+	INIT_WORK(&work->work, cma_clear_bitmap_fn);
+	work->cma = cma;
+	work->pfn = pfn;
+	work->count = count;
+	queue_work(cma_release_wq, &work->work);
+
 	trace_cma_release(pfn, pages, count);
 
 	return true;
