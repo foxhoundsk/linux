@@ -1,0 +1,99 @@
+percpu: partial chunk depopulation
+
+In our production experience the percpu memory allocator is sometimes struggling
+with returning the memory to the system. A typical example is a creation of
+several thousands memory cgroups (each has several chunks of the percpu data
+used for vmstats, vmevents, ref counters etc). Deletion and complete releasing
+of these cgroups doesn't always lead to a shrinkage of the percpu memory,
+so that sometimes there are several GB's of memory wasted.
+
+The underlying problem is the fragmentation: to release an underlying chunk
+all percpu allocations should be released first. The percpu allocator tends
+to top up chunks to improve the utilization. It means new small-ish allocations
+(e.g. percpu ref counters) are placed onto almost filled old-ish chunks,
+effectively pinning them in memory.
+
+This patchset solves this problem by implementing a partial depopulation
+of percpu chunks: chunks with many empty pages are being asynchronously
+depopulated and the pages are returned to the system.
+
+To illustrate the problem the following script can be used:
+
+--
+#!/bin/bash
+
+cd /sys/fs/cgroup
+
+mkdir percpu_test
+echo "+memory" > percpu_test/cgroup.subtree_control
+
+cat /proc/meminfo | grep Percpu
+
+for i in `seq 1 1000`; do
+    mkdir percpu_test/cg_"${i}"
+    for j in `seq 1 10`; do
+	mkdir percpu_test/cg_"${i}"_"${j}"
+    done
+done
+
+cat /proc/meminfo | grep Percpu
+
+for i in `seq 1 1000`; do
+    for j in `seq 1 10`; do
+	rmdir percpu_test/cg_"${i}"_"${j}"
+    done
+done
+
+sleep 10
+
+cat /proc/meminfo | grep Percpu
+
+for i in `seq 1 1000`; do
+    rmdir percpu_test/cg_"${i}"
+done
+
+rmdir percpu_test
+--
+
+It creates 11000 memory cgroups and removes every 10 out of 11.
+It prints the initial size of the percpu memory, the size after
+creating all cgroups and the size after deleting most of them.
+
+Results:
+  vanilla:
+    ./percpu_test.sh
+    Percpu:             7488 kB
+    Percpu:           481152 kB
+    Percpu:           481152 kB
+
+  with this patchset applied:
+    ./percpu_test.sh
+    Percpu:             7488 kB
+    Percpu:           481408 kB
+    Percpu:           135552 kB
+
+So the total size of the percpu memory was reduced by more than 3.5 times.
+
+v3:
+  - introduced pcpu_check_chunk_hint()
+  - fixed a bug related to the hint check
+  - minor cosmetic changes
+  - s/pretends/fixes (cc Vlastimil)
+
+v2:
+  - depopulated chunks are sidelined
+  - depopulation happens in the reverse order
+  - depopulate list made per-chunk type
+  - better results due to better heuristics
+
+v1:
+  - depopulation heuristics changed and optimized
+  - chunks are put into a separate list, depopulation scan this list
+  - chunk->isolated is introduced, chunk->depopulate is dropped
+  - rearranged patches a bit
+  - fixed a panic discovered by krobot
+  - made pcpu_nr_empty_pop_pages per chunk type
+  - minor fixes
+
+rfc:
+  https://lwn.net/Articles/850508/
