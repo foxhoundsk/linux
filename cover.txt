@@ -1,0 +1,16 @@
+percpu: memcg memory accounting rework
+
+This patchset reworks memcg-based accounting of the percpu memory:
+instead of using two types of chunks (memcg-aware and non-memcg-aware)
+it treats all chunks as memcg-aware. An extra memory used for objcg
+arrays will is compensated by a better chunks utilization, so the
+total memory footprint should be the same or smaller.
+
+First two patches are preparational changes and cleanups on the memcg side.
+The third one is percpu accounting rework.
+
+v2:
+  - make all chunks memcg-aware instead of on-demand objcg allocation, by Dennis
+
+v1:
+  https://lkml.org/lkml/2021/5/11/1343
