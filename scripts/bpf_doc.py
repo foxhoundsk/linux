@@ -547,6 +547,7 @@ class PrinterHelpers(Printer):
             'struct inode',
             'struct socket',
             'struct file',
+            'struct sched_entity',
     ]
     known_types = {
             '...',
@@ -594,6 +595,7 @@ class PrinterHelpers(Printer):
             'struct inode',
             'struct socket',
             'struct file',
+            'struct sched_entity',
     }
     mapped_types = {
             'u8': '__u8',
