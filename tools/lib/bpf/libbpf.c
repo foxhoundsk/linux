@@ -9144,7 +9144,8 @@ static struct bpf_link *attach_lsm(const struct bpf_sec_def *sec,
 				   struct bpf_program *prog);
 static struct bpf_link *attach_iter(const struct bpf_sec_def *sec,
 				    struct bpf_program *prog);
-static struct bpf_link *attach_sched(struct bpf_program *prog);
+static struct bpf_link *attach_sched(const struct bpf_sec_def *sec,
+                                     struct bpf_program *prog);
 
 static const struct bpf_sec_def section_defs[] = {
 	BPF_PROG_SEC("socket",			BPF_PROG_TYPE_SOCKET_FILTER),
@@ -10649,7 +10650,8 @@ static struct bpf_link *attach_lsm(const struct bpf_sec_def *sec,
 	return bpf_program__attach_lsm(prog);
 }
 
-static struct bpf_link *attach_sched(struct bpf_program *prog)
+static struct bpf_link *attach_sched(const struct bpf_sec_def *sec,
+                                     struct bpf_program *prog)
 {
 	return bpf_program__attach_sched(prog);
 }
