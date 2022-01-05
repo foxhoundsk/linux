@@ -4256,7 +4256,9 @@ static int link_create(union bpf_attr *attr, bpfptr_t uattr)
 	case BPF_PROG_TYPE_PERF_EVENT:
 	case BPF_PROG_TYPE_KPROBE:
 	case BPF_PROG_TYPE_TRACEPOINT:
-		if (attr->link_create.attach_type != BPF_PERF_EVENT) {
+        case BPF_PROG_TYPE_SCHED:
+		if (attr->link_create.attach_type != BPF_PERF_EVENT &&
+                    attr->link_create.attach_type != BPF_SCHED) {
 			ret = -EINVAL;
 			goto out;
 		}
@@ -4297,6 +4299,7 @@ static int link_create(union bpf_attr *attr, bpfptr_t uattr)
 	case BPF_PROG_TYPE_PERF_EVENT:
 	case BPF_PROG_TYPE_TRACEPOINT:
 	case BPF_PROG_TYPE_KPROBE:
+        case BPF_PROG_TYPE_SCHED:
 		ret = bpf_perf_link_attach(attr, prog);
 		break;
 #endif
