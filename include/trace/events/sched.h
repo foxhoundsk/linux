@@ -682,6 +682,332 @@ TRACE_EVENT(sched_wake_idle_without_ipi,
 	TP_printk("cpu=%d", __entry->cpu)
 );
 
+TRACE_EVENT(sched_detach_tasks_start,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("detach_tasks_start dummy=%d", __entry->dummy)
+);
+
+TRACE_EVENT(sched_detach_tasks_end,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("detach_tasks_end dummy=%d", __entry->dummy)
+);
+
+TRACE_EVENT(sched_detach_one_task_start,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("detach_tasks_end dummy=%d", __entry->dummy)
+);
+
+TRACE_EVENT(sched_detach_one_task_end,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("detach_tasks_end dummy=%d", __entry->dummy)
+);
+
+TRACE_EVENT(sched_lb_end,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("lb_end dummy=%d", __entry->dummy)
+);
+
+TRACE_EVENT(sched_cmt_s,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("cmt_s dummy=%d", __entry->dummy)
+);
+
+TRACE_EVENT(sched_cmt_e,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("cmt_e dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_thl_s,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("thl_s dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_thl_e,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("thl_e dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_ats_s,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("ats_s dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_ats_e,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("ats_e dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_socn_s,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("socn_s dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_socn_e,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("socn_e dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_at_s,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("at_s dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_at_e,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("at_e dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_fbq_s,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("fbq_s dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_fbq_e,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("fbq_e dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_crlut_s,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("crlut_s dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_crlut_e,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("crlut_e dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_stc_e, // sched_crlut_e acts as start of this pair
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("stc_e dummy=%d", __entry->dummy)
+);
 /*
  * Following tracepoints are not exported in tracefs and provide hooking
  * mechanisms only for testing and debugging purposes.
