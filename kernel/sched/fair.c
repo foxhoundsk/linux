@@ -7904,9 +7904,14 @@ int can_migrate_task(struct task_struct *p, struct lb_env *env)
 static void detach_task(struct task_struct *p, struct lb_env *env)
 {
 	lockdep_assert_rq_held(env->src_rq);
-
+        if (bpf_sched_enabled())
+                bpf_sched_detach_task_start();
 	deactivate_task(env->src_rq, p, DEQUEUE_NOCLOCK);
+        if (bpf_sched_enabled())
+                bpf_sched_detach_task_mid();
 	set_task_cpu(p, env->dst_cpu);
+        if (bpf_sched_enabled())
+                bpf_sched_detach_task_end();
 }
 
 /*
@@ -7956,18 +7961,24 @@ static int detach_tasks(struct lb_env *env)
 	int detached = 0;
 
 	lockdep_assert_rq_held(env->src_rq);
-
+        if (bpf_sched_enabled())
+                bpf_sched_detach_tasks_start();
 	/*
 	 * Source run queue has been emptied by another CPU, clear
 	 * LBF_ALL_PINNED flag as we will not test any task.
 	 */
 	if (env->src_rq->nr_running <= 1) {
 		env->flags &= ~LBF_ALL_PINNED;
+            if (bpf_sched_enabled())
+                    bpf_sched_detach_tasks_end();
 		return 0;
 	}
 
-	if (env->imbalance <= 0)
+	if (env->imbalance <= 0) {
+            if (bpf_sched_enabled())
+                    bpf_sched_detach_tasks_end();
 		return 0;
+        }
 
 	while (!list_empty(tasks)) {
 		/*
@@ -7991,8 +8002,12 @@ static int detach_tasks(struct lb_env *env)
 			break;
 		}
 
-		if (!can_migrate_task(p, env))
+//trace_sched_cmt_s(0);
+		if (!can_migrate_task(p, env)) {
+//trace_sched_cmt_e(0);
 			goto next;
+                }
+//trace_sched_cmt_e(0);
 
 		switch (env->migration_type) {
 		case migrate_load:
@@ -8076,6 +8091,9 @@ next:
 	 * than inside detach_one_task().
 	 */
 	schedstat_add(env->sd->lb_gained[env->idle], detached);
+
+        if (bpf_sched_enabled())
+                bpf_sched_detach_tasks_end();
 
 	return detached;
 }
