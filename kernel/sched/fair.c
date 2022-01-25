@@ -7906,12 +7906,15 @@ static void detach_task(struct task_struct *p, struct lb_env *env)
 	lockdep_assert_rq_held(env->src_rq);
         if (bpf_sched_enabled())
                 bpf_sched_detach_task_start();
+//trace_sched_crlut_s(0);
 	deactivate_task(env->src_rq, p, DEQUEUE_NOCLOCK);
         if (bpf_sched_enabled())
                 bpf_sched_detach_task_mid();
+//trace_sched_crlut_e(0);
 	set_task_cpu(p, env->dst_cpu);
         if (bpf_sched_enabled())
                 bpf_sched_detach_task_end();
+//trace_sched_stc_e(0);
 }
 
 /*
@@ -7961,6 +7964,7 @@ static int detach_tasks(struct lb_env *env)
 	int detached = 0;
 
 	lockdep_assert_rq_held(env->src_rq);
+//trace_sched_detach_tasks_start(0);
         if (bpf_sched_enabled())
                 bpf_sched_detach_tasks_start();
 	/*
@@ -7969,12 +7973,14 @@ static int detach_tasks(struct lb_env *env)
 	 */
 	if (env->src_rq->nr_running <= 1) {
 		env->flags &= ~LBF_ALL_PINNED;
+//trace_sched_detach_tasks_end(0);
             if (bpf_sched_enabled())
                     bpf_sched_detach_tasks_end();
 		return 0;
 	}
 
 	if (env->imbalance <= 0) {
+//trace_sched_detach_tasks_end(0);
             if (bpf_sched_enabled())
                     bpf_sched_detach_tasks_end();
 		return 0;
@@ -8018,7 +8024,9 @@ static int detach_tasks(struct lb_env *env)
 			 * otherwise detach_tasks() will stop only after
 			 * detaching up to loop_max tasks.
 			 */
+//trace_sched_thl_s(0);
 			load = max_t(unsigned long, task_h_load(p), 1);
+//trace_sched_thl_e(0);
 
 			if (sched_feat(LB_MIN) &&
 			    load < 16 && !env->sd->nr_balance_failed)
@@ -8058,7 +8066,9 @@ static int detach_tasks(struct lb_env *env)
 			break;
 		}
 
+//trace_sched_detach_one_task_start(0);
 		detach_task(p, env);
+//trace_sched_detach_one_task_end(0);
 		list_add(&p->se.group_node, &env->tasks);
 
 		detached++;
@@ -8092,6 +8102,7 @@ next:
 	 */
 	schedstat_add(env->sd->lb_gained[env->idle], detached);
 
+//trace_sched_detach_tasks_end(0);
         if (bpf_sched_enabled())
                 bpf_sched_detach_tasks_end();
 
@@ -8141,7 +8152,9 @@ static void attach_tasks(struct lb_env *env)
 		p = list_first_entry(tasks, struct task_struct, se.group_node);
 		list_del_init(&p->se.group_node);
 
+trace_sched_at_s(0);
 		attach_task(env->dst_rq, p);
+trace_sched_at_e(0);
 	}
 
 	rq_unlock(env->dst_rq, &rf);
@@ -9863,7 +9876,9 @@ redo:
 		goto out_balanced;
 	}
 
+//trace_sched_fbq_s(0);
 	busiest = find_busiest_queue(&env, group);
+//trace_sched_fbq_e(0);
 	if (!busiest) {
 		schedstat_inc(sd->lb_nobusyq[idle]);
 		goto out_balanced;
@@ -9909,7 +9924,9 @@ more_balance:
 		rq_unlock(busiest, &rf);
 
 		if (cur_ld_moved) {
+//trace_sched_ats_s(0);
 			attach_tasks(&env);
+//trace_sched_ats_e(0);
 			ld_moved += cur_ld_moved;
 		}
 
@@ -10029,9 +10046,11 @@ more_balance:
 			raw_spin_rq_unlock_irqrestore(busiest, flags);
 
 			if (active_balance) {
+//trace_sched_socn_s(0);
 				stop_one_cpu_nowait(cpu_of(busiest),
 					active_load_balance_cpu_stop, busiest,
 					&busiest->active_balance_work);
+//trace_sched_socn_e(0);
 			}
 		}
 	} else {
@@ -10089,6 +10108,7 @@ out:
         if (bpf_sched_enabled())
                 bpf_sched_cfs_trigger_load_balance_end();
 
+//trace_sched_lb_end(0);
 	return ld_moved;
 }
 
