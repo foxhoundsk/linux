@@ -1008,6 +1008,102 @@ TRACE_EVENT(sched_stc_e, // sched_crlut_e acts as start of this pair
 
 	TP_printk("stc_e dummy=%d", __entry->dummy)
 );
+TRACE_EVENT(sched_deq_task_s,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("deq_task_s dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_scd_e,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("scd_e dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_urc_s,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("urc_s dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_urc_e,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("urc_e dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_sidpd_s,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("sidpd_s dummy=%d", __entry->dummy)
+);
+TRACE_EVENT(sched_sidpd_e,
+
+	TP_PROTO(int dummy),
+
+	TP_ARGS(dummy),
+
+	TP_STRUCT__entry(
+		__field(	int,	dummy	)
+	),
+
+	TP_fast_assign(
+		__entry->dummy  = dummy;
+	),
+
+	TP_printk("sidpd_e dummy=%d", __entry->dummy)
+);
 /*
  * Following tracepoints are not exported in tracefs and provide hooking
  * mechanisms only for testing and debugging purposes.

@@ -1983,18 +1983,26 @@ static inline void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
 
 static inline void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
 {
-	if (sched_core_enabled(rq))
+	if (sched_core_enabled(rq)) {
 		sched_core_dequeue(rq, p);
+trace_sched_scd_e(0);
+        }
 
-	if (!(flags & DEQUEUE_NOCLOCK))
+	if (!(flags & DEQUEUE_NOCLOCK)) {
+trace_sched_urc_s(0);
 		update_rq_clock(rq);
+trace_sched_urc_e(0);
+        }
 
 	if (!(flags & DEQUEUE_SAVE)) {
+trace_sched_sidpd_s(0);
 		sched_info_dequeue(rq, p);
 		psi_dequeue(p, flags & DEQUEUE_SLEEP);
+trace_sched_sidpd_e(0);
 	}
 
 	uclamp_rq_dec(rq, p);
+trace_sched_deq_task_s(0);
 	p->sched_class->dequeue_task(rq, p, flags);
 }
 
